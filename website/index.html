@@ -1,0 +1,1587 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OPC CLI · 语音智能中枢</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --accent-cyan: #00f5d4;
+            --accent-purple: #9b5de5;
+            --accent-pink: #f15bb5;
+            --accent-yellow: #fee440;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --text-muted: #606070;
+            --border-color: #2a2a3a;
+            --gradient-1: linear-gradient(135deg, #00f5d4 0%, #9b5de5 50%, #f15bb5 100%);
+            --gradient-2: linear-gradient(90deg, #fee440 0%, #00f5d4 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Space Mono', monospace;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Noise texture overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-cyan);
+            border-radius: 4px;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            padding: 1.5rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(10, 10, 15, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.02em;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            transition: color 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--accent-cyan);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-primary);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            text-align: center;
+            padding: 6rem 2rem 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-bg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120%;
+            height: 120%;
+            pointer-events: none;
+        }
+
+        .hero-bg-circle {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .circle-1 {
+            width: 600px;
+            height: 600px;
+            background: var(--accent-cyan);
+            top: 20%;
+            left: 20%;
+            animation-delay: 0s;
+        }
+
+        .circle-2 {
+            width: 500px;
+            height: 500px;
+            background: var(--accent-purple);
+            top: 40%;
+            right: 20%;
+            animation-delay: -7s;
+        }
+
+        .circle-3 {
+            width: 400px;
+            height: 400px;
+            background: var(--accent-pink);
+            bottom: 20%;
+            left: 40%;
+            animation-delay: -14s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(50px, -50px) scale(1.1); }
+            50% { transform: translate(-30px, 30px) scale(0.95); }
+            75% { transform: translate(40px, 40px) scale(1.05); }
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-height: 45vh;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 100px;
+            font-size: 0.75rem;
+            color: var(--accent-cyan);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 2rem;
+        }
+
+        .hero h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(2.5rem, 8vw, 5rem);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1rem;
+            letter-spacing: -0.03em;
+        }
+
+        .hero h1 span {
+            display: block;
+        }
+
+        .hero h1 .gradient-text {
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            max-width: 500px;
+            margin: 0 auto 1.5rem;
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--gradient-1);
+            color: var(--bg-primary);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(0, 245, 212, 0.3);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        /* Terminal Demo */
+        .terminal-demo {
+            margin-top: 2rem;
+            width: 100%;
+            max-width: 800px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+            flex-shrink: 0;
+        }
+
+        .terminal-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 1.5rem;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .terminal-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .dot-red { background: #ff5f56; }
+        .dot-yellow { background: #ffbd2e; }
+        .dot-green { background: #27ca40; }
+
+        .terminal-title {
+            margin-left: 1rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .terminal-body {
+            padding: 1.5rem;
+            font-size: 0.9rem;
+            line-height: 1.8;
+        }
+
+        .terminal-line {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+            opacity: 0;
+            animation: fadeInUp 0.5s ease forwards;
+        }
+
+        .terminal-prompt {
+            color: var(--accent-cyan);
+            flex-shrink: 0;
+        }
+
+        .terminal-command {
+            color: var(--text-primary);
+        }
+
+        .terminal-output {
+            color: var(--text-secondary);
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+            padding-left: 1rem;
+            border-left: 2px solid var(--border-color);
+            opacity: 0;
+            animation: fadeInUp 0.5s ease forwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Section Styles */
+        section {
+            padding: 6rem 2rem;
+            position: relative;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-tag {
+            display: inline-block;
+            padding: 0.4rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 100px;
+            font-size: 0.7rem;
+            color: var(--accent-purple);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .section-desc {
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Architecture Flow */
+        .architecture {
+            background: var(--bg-secondary);
+        }
+
+        .flow-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .flow-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            position: relative;
+            transition: all 0.4s ease;
+            cursor: pointer;
+        }
+
+        .flow-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-1);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .flow-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 20px 60px rgba(0, 245, 212, 0.1);
+        }
+
+        .flow-card:hover::before {
+            opacity: 1;
+        }
+
+        .flow-number {
+            font-family: 'Syne', sans-serif;
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--text-muted);
+            opacity: 0.3;
+            line-height: 1;
+            margin-bottom: 1rem;
+        }
+
+        .flow-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .flow-card:nth-child(1) .flow-icon { background: rgba(0, 245, 212, 0.1); }
+        .flow-card:nth-child(2) .flow-icon { background: rgba(155, 93, 229, 0.1); }
+        .flow-card:nth-child(3) .flow-icon { background: rgba(241, 91, 181, 0.1); }
+        .flow-card:nth-child(4) .flow-icon { background: rgba(254, 228, 64, 0.1); }
+
+        .flow-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        .flow-desc {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+
+        .flow-output {
+            margin-top: 1.5rem;
+            padding: 0.75rem 1rem;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: var(--accent-cyan);
+            font-family: 'Space Mono', monospace;
+        }
+
+        /* Features Grid */
+        .features-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .feature-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--gradient-1);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 0;
+        }
+
+        .feature-card:hover {
+            border-color: transparent;
+            transform: scale(1.02);
+        }
+
+        .feature-card:hover::after {
+            opacity: 0.05;
+        }
+
+        .feature-card > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .feature-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-badge {
+            padding: 0.25rem 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 100px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .badge-tts { color: var(--accent-cyan); }
+        .badge-asr { color: var(--accent-purple); }
+        .badge-cut { color: var(--accent-pink); }
+        .badge-device { color: var(--accent-yellow); }
+
+        .feature-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .feature-desc {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .feature-code {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-family: 'Space Mono', monospace;
+            overflow-x: auto;
+        }
+
+        .feature-code .cmd { color: var(--accent-cyan); }
+        .feature-code .arg { color: var(--accent-pink); }
+        .feature-code .flag { color: var(--accent-yellow); }
+
+        /* Model Matrix */
+        .model-matrix {
+            background: var(--bg-secondary);
+        }
+
+        .matrix-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .matrix-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .matrix-table th,
+        .matrix-table td {
+            padding: 1.25rem 1.5rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .matrix-table th {
+            font-family: 'Syne', sans-serif;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.1em;
+        }
+
+        .matrix-table tr:hover td {
+            background: rgba(0, 245, 212, 0.03);
+        }
+
+        .model-name {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 600;
+        }
+
+        .model-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .dot-edge { background: var(--accent-cyan); }
+        .dot-qwen { background: var(--accent-purple); }
+
+        .tag {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .tag-online {
+            background: rgba(0, 245, 212, 0.15);
+            color: var(--accent-cyan);
+        }
+
+        .tag-local {
+            background: rgba(155, 93, 229, 0.15);
+            color: var(--accent-purple);
+        }
+
+        .check { color: var(--accent-cyan); }
+        .cross { color: var(--text-muted); }
+
+        /* Pipeline Visualization */
+        .pipeline-viz {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .pipeline-steps {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .pipeline-line {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--border-color);
+            z-index: 0;
+        }
+
+        .pipeline-progress {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            height: 2px;
+            background: var(--gradient-1);
+            z-index: 1;
+            width: 0%;
+            transition: width 1s ease;
+        }
+
+        .pipeline-step {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+        }
+
+        .step-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--bg-primary);
+            border: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        .pipeline-step:hover .step-circle,
+        .pipeline-step.active .step-circle {
+            border-color: var(--accent-cyan);
+            background: var(--accent-cyan);
+            color: var(--bg-primary);
+            box-shadow: 0 0 30px rgba(0, 245, 212, 0.4);
+        }
+
+        .step-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-align: center;
+            max-width: 100px;
+        }
+
+        .pipeline-step.active .step-label {
+            color: var(--accent-cyan);
+        }
+
+        .pipeline-detail {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            padding: 2rem;
+            border: 1px solid var(--border-color);
+            min-height: 200px;
+        }
+
+        .detail-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--accent-cyan);
+        }
+
+        .detail-content {
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        .detail-code {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+        }
+
+        /* Dashboard Preview */
+        .dashboard-preview {
+            max-width: 1100px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .browser-mockup {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.5);
+        }
+
+        .browser-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 1.5rem;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .browser-address {
+            flex: 1;
+            padding: 0.5rem 1rem;
+            background: var(--bg-primary);
+            border-radius: 6px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        .browser-content {
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 2rem;
+            min-height: 400px;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .sidebar-item {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-item:hover,
+        .sidebar-item.active {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .sidebar-item.active {
+            border-left: 3px solid var(--accent-cyan);
+        }
+
+        .main-content {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .content-placeholder {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .placeholder-line {
+            height: 12px;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+        }
+
+        .placeholder-line.short { width: 60%; }
+        .placeholder-line.medium { width: 80%; }
+
+        /* Stats Section */
+        .stats {
+            background: var(--bg-primary);
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .stats-grid {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .stat-number {
+            font-family: 'Syne', sans-serif;
+            font-size: 3rem;
+            font-weight: 800;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-top: 0.5rem;
+        }
+
+        /* Footer */
+        footer {
+            padding: 4rem 2rem;
+            text-align: center;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .footer-logo {
+            font-family: 'Syne', sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+
+        .footer-tagline {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--accent-cyan);
+        }
+
+        .footer-copy {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            nav {
+                padding: 1rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .hero {
+                padding: 6rem 1.5rem 3rem;
+            }
+
+            section {
+                padding: 4rem 1.5rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .browser-content {
+                grid-template-columns: 1fr;
+            }
+
+            .pipeline-steps {
+                flex-wrap: wrap;
+                gap: 1rem;
+            }
+
+            .pipeline-line,
+            .pipeline-progress {
+                display: none;
+            }
+        }
+
+        /* Animation utilities */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease;
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Cursor blink */
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 1.2em;
+            background: var(--accent-cyan);
+            animation: blink 1s step-end infinite;
+            vertical-align: text-bottom;
+            margin-left: 2px;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="logo">OPC</div>
+        <ul class="nav-links">
+            <li><a href="#architecture">架构</a></li>
+            <li><a href="#features">功能</a></li>
+            <li><a href="#models">模型</a></li>
+            <li><a href="#pipeline">Pipeline</a></li>
+            <li><a href="#dashboard">Dashboard</a></li>
+            <li><a href="docs.html">文档</a></li>
+        </ul>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-bg">
+            <div class="hero-bg-circle circle-1"></div>
+            <div class="hero-bg-circle circle-2"></div>
+            <div class="hero-bg-circle circle-3"></div>
+        </div>
+
+        <div class="hero-content">
+            <div class="hero-badge">AI Agent 语音工具链</div>
+            <h1>
+                <span>语音智能</span>
+                <span class="gradient-text">中枢系统</span>
+            </h1>
+            <p class="hero-subtitle">
+                多引擎 TTS + Qwen3-ASR 语音识别 + 字词级视频剪辑
+                <br>为 AI Agent 设计的完整语音处理 CLI 工具
+            </p>
+            <div class="hero-cta">
+                <a href="#features" class="btn btn-primary">探索功能 →</a>
+                <a href="#architecture" class="btn btn-secondary">查看架构</a>
+            </div>
+        </div>
+
+        <!-- Terminal Demo -->
+        <div class="terminal-demo">
+            <div class="terminal-header">
+                <div class="terminal-dot dot-red"></div>
+                <div class="terminal-dot dot-yellow"></div>
+                <div class="terminal-dot dot-green"></div>
+                <span class="terminal-title">opc-cli</span>
+            </div>
+            <div class="terminal-body" id="terminal">
+                <!-- Terminal content will be animated by JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-number">2</div>
+                <div class="stat-label">TTS 引擎</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">4</div>
+                <div class="stat-label">ASR 阶段</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">9</div>
+                <div class="stat-label">内置音色</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">∞</div>
+                <div class="stat-label">扩展可能</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture Section -->
+    <section id="architecture" class="architecture">
+        <div class="section-header reveal">
+            <div class="section-tag">System Architecture</div>
+            <h2 class="section-title">模块化架构设计</h2>
+            <p class="section-desc">从语音合成到语音识别，再到视频剪辑的完整工作流</p>
+        </div>
+
+        <div class="flow-container">
+            <div class="flow-card reveal">
+                <div class="flow-number">01</div>
+                <div class="flow-icon">🔊</div>
+                <h3 class="flow-title">TTS 语音合成</h3>
+                <p class="flow-desc">
+                    支持 Edge-TTS（微软在线）和 Qwen3-TTS（本地模型）双引擎。
+                    内置 9 种音色，支持情绪指令、声音设计、声音克隆。
+                </p>
+                <div class="flow-output">opc tts "Hello" -e qwen --speaker Vivian</div>
+            </div>
+
+            <div class="flow-card reveal">
+                <div class="flow-number">02</div>
+                <div class="flow-icon">🎙️</div>
+                <h3 class="flow-title">ASR 语音识别</h3>
+                <p class="flow-desc">
+                    基于 Qwen3-ASR-1.7B 和强制对齐模型，
+                    4 阶段 Pipeline 生成 SRT/ASS 卡拉 OK 字幕。
+                </p>
+                <div class="flow-output">opc asr audio.mp3 --format srt</div>
+            </div>
+
+            <div class="flow-card reveal">
+                <div class="flow-number">03</div>
+                <div class="flow-icon">✂️</div>
+                <h3 class="flow-title">Cut 视频剪辑</h3>
+                <p class="flow-desc">
+                    基于 ASR 字词级时间戳的可视化剪辑界面。
+                    双击删除字词，拖拽选择，实时预览。
+                </p>
+                <div class="flow-output">opc cut --video clip.mp4</div>
+            </div>
+
+            <div class="flow-card reveal">
+                <div class="flow-number">04</div>
+                <div class="flow-icon">📡</div>
+                <h3 class="flow-title">设备播放</h3>
+                <p class="flow-desc">
+                    自动发现 AirPlay 和 DLNA 设备，
+                    支持 HomePod、Apple TV 等无线播放。
+                </p>
+                <div class="flow-output">opc say "通知" --device HomePod</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features">
+        <div class="section-header reveal">
+            <div class="section-tag">Core Features</div>
+            <h2 class="section-title">核心功能矩阵</h2>
+            <p class="section-desc">覆盖语音处理全流程的命令行工具</p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card reveal">
+                <div class="feature-header">
+                    <span class="feature-badge badge-tts">TTS</span>
+                    <h3 class="feature-title">多引擎语音合成</h3>
+                </div>
+                <p class="feature-desc">
+                    Edge-TTS 提供 322 种在线音色，Qwen3-TTS 支持本地部署。
+                    支持语速、音调、音量调节，以及情绪指令控制。
+                </p>
+                <div class="feature-code">
+                    <span class="cmd">opc tts</span> <span class="arg">"你好"</span> <span class="flag">-e</span> qwen <span class="flag">--speaker</span> Vivian <span class="flag">--instruct</span> <span class="arg">"用温柔的语气"</span>
+                </div>
+            </div>
+
+            <div class="feature-card reveal">
+                <div class="feature-header">
+                    <span class="feature-badge badge-asr">ASR</span>
+                    <h3 class="feature-title">4阶段 Pipeline</h3>
+                </div>
+                <p class="feature-desc">
+                    ASR + 强制对齐 → 断句 → CSV 修正 → 渲染输出。
+                    每阶段保存中间文件，支持从任意阶段恢复执行。
+                </p>
+                <div class="feature-code">
+                    <span class="cmd">opc asr</span> <span class="arg">audio.mp3</span> <span class="flag">--format</span> srt <span class="flag">--fix-dir</span> <span class="arg">./fixes</span>
+                </div>
+            </div>
+
+            <div class="feature-card reveal">
+                <div class="feature-header">
+                    <span class="feature-badge badge-cut">CUT</span>
+                    <h3 class="feature-title">字词级视频剪辑</h3>
+                </div>
+                <p class="feature-desc">
+                    Web 可视化界面，基于 ASR 字词时间戳精确剪辑。
+                    双击删除字词，Delete 键批量删除，Ctrl+A 全选。
+                </p>
+                <div class="feature-code">
+                    <span class="cmd">opc cut</span> <span class="flag">--video</span> <span class="arg">/path/to/video.mp4</span> <span class="flag">--port</span> <span class="arg">9090</span>
+                </div>
+            </div>
+
+            <div class="feature-card reveal">
+                <div class="feature-header">
+                    <span class="feature-badge badge-device">DEVICE</span>
+                    <h3 class="feature-title">智能设备发现</h3>
+                </div>
+                <p class="feature-desc">
+                    自动扫描局域网内的 AirPlay 和 DLNA 设备。
+                    支持 HomePod、Apple TV、智能电视等无线音频投放。
+                </p>
+                <div class="feature-code">
+                    <span class="cmd">opc discover</span> <span class="flag">--set-default</span>
+                    <br><span class="cmd">opc say</span> <span class="arg">"播放完成"</span> <span class="flag">--device</span> <span class="arg">"Living Room"</span>
+                </div>
+            </div>
+
+            <div class="feature-card reveal">
+                <div class="feature-header">
+                    <span class="feature-badge badge-asr">ASR-SPLIT</span>
+                    <h3 class="feature-title">字幕行拆分</h3>
+                </div>
+                <p class="feature-desc">
+                    当字幕行超过最大字符数时，按文本匹配精确拆分。
+                    支持单条拆分和 CSV 批量处理，保留卡拉 OK 时间戳。
+                </p>
+                <div class="feature-code">
+                    <span class="cmd">opc asr-split</span> <span class="arg">audio.lines.json</span> <span class="flag">--line</span> <span class="arg">10</span> <span class="flag">--after</span> <span class="arg">"理解，"</span>
+                </div>
+            </div>
+
+            <div class="feature-card reveal">
+                <div class="feature-header">
+                    <span class="feature-badge badge-tts">VOICE</span>
+                    <h3 class="feature-title">声音克隆与设计</h3>
+                </div>
+                <p class="feature-desc">
+                    Qwen3-TTS 支持 voice_clone 模式克隆任意声音，
+                    voice_design 模式通过文本描述创建虚拟音色。
+                </p>
+                <div class="feature-code">
+                    <span class="cmd">opc tts</span> <span class="arg">"你好"</span> <span class="flag">-e</span> qwen <span class="flag">--mode</span> voice_clone <span class="flag">--ref-audio</span> <span class="arg">ref.wav</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Model Matrix Section -->
+    <section id="models" class="model-matrix">
+        <div class="section-header reveal">
+            <div class="section-tag">Model Comparison</div>
+            <h2 class="section-title">引擎能力矩阵</h2>
+            <p class="section-desc">不同 TTS/ASR 引擎的特性对比</p>
+        </div>
+
+        <div class="matrix-container reveal">
+            <table class="matrix-table">
+                <thead>
+                    <tr>
+                        <th>引擎</th>
+                        <th>部署方式</th>
+                        <th>音色数量</th>
+                        <th>情绪控制</th>
+                        <th>声音克隆</th>
+                        <th>离线使用</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div class="model-name">
+                                <div class="model-dot dot-edge"></div>
+                                Edge-TTS
+                            </div>
+                        </td>
+                        <td><span class="tag tag-online">在线</span></td>
+                        <td>322+</td>
+                        <td class="cross">✗</td>
+                        <td class="cross">✗</td>
+                        <td class="cross">✗</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="model-name">
+                                <div class="model-dot dot-qwen"></div>
+                                Qwen3-TTS 1.7B
+                            </div>
+                        </td>
+                        <td><span class="tag tag-local">本地</span></td>
+                        <td>9 内置 + ∞</td>
+                        <td class="check">✓</td>
+                        <td class="check">✓</td>
+                        <td class="check">✓</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="model-name">
+                                <div class="model-dot dot-qwen"></div>
+                                Qwen3-TTS 0.6B
+                            </div>
+                        </td>
+                        <td><span class="tag tag-local">本地</span></td>
+                        <td>9 内置</td>
+                        <td class="cross">✗</td>
+                        <td class="check">✓</td>
+                        <td class="check">✓</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="model-name">
+                                <div class="model-dot dot-qwen"></div>
+                                Qwen3-ASR 1.7B
+                            </div>
+                        </td>
+                        <td><span class="tag tag-local">本地</span></td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td class="check">✓</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Pipeline Section -->
+    <section id="pipeline">
+        <div class="section-header reveal">
+            <div class="section-tag">ASR Pipeline</div>
+            <h2 class="section-title">4阶段处理流程</h2>
+            <p class="section-desc">点击步骤查看详细说明</p>
+        </div>
+
+        <div class="pipeline-viz reveal">
+            <div class="pipeline-steps">
+                <div class="pipeline-line"></div>
+                <div class="pipeline-progress" id="pipelineProgress"></div>
+
+                <div class="pipeline-step active" data-step="1">
+                    <div class="step-circle">1</div>
+                    <div class="step-label">ASR +<br>强制对齐</div>
+                </div>
+                <div class="pipeline-step" data-step="2">
+                    <div class="step-circle">2</div>
+                    <div class="step-label">智能<br>断句</div>
+                </div>
+                <div class="pipeline-step" data-step="3">
+                    <div class="step-circle">3</div>
+                    <div class="step-label">CSV<br>修正</div>
+                </div>
+                <div class="pipeline-step" data-step="4">
+                    <div class="step-circle">4</div>
+                    <div class="step-label">渲染<br>输出</div>
+                </div>
+            </div>
+
+            <div class="pipeline-detail" id="pipelineDetail">
+                <h3 class="detail-title">Stage 1: ASR + 强制对齐</h3>
+                <div class="detail-content">
+                    <p>使用 Qwen3-ASR-1.7B 模型进行语音识别，结合 Qwen3-ForcedAligner 进行字词级时间戳对齐。</p>
+                    <p>这是 GPU 最密集的阶段，输出包含每个字的精确开始/结束时间的 raw.json 文件。</p>
+                </div>
+                <div class="detail-code">→ 输出: audio.raw.json (GPU 密集，可复用)</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dashboard Section -->
+    <section id="dashboard" class="architecture">
+        <div class="section-header reveal">
+            <div class="section-tag">Web Dashboard</div>
+            <h2 class="section-title">可视化技能管理面板</h2>
+            <p class="section-desc">基于 Vue3 + Node.js 的技能注册式架构</p>
+        </div>
+
+        <div class="dashboard-preview reveal">
+            <div class="browser-mockup">
+                <div class="browser-header">
+                    <div class="terminal-dot dot-red"></div>
+                    <div class="terminal-dot dot-yellow"></div>
+                    <div class="terminal-dot dot-green"></div>
+                    <div class="browser-address">localhost:12080/skill/cut</div>
+                </div>
+                <div class="browser-content">
+                    <div class="sidebar">
+                        <div class="sidebar-item">🏠 Dashboard</div>
+                        <div class="sidebar-item active">✂️ Cut Editor</div>
+                        <div class="sidebar-item">🔊 TTS Settings</div>
+                        <div class="sidebar-item">🎙️ ASR Pipeline</div>
+                        <div class="sidebar-item">⚙️ Configuration</div>
+                    </div>
+                    <div class="main-content">
+                        <div class="content-placeholder">
+                            <div class="placeholder-line short"></div>
+                            <div class="placeholder-line"></div>
+                            <div class="placeholder-line medium"></div>
+                            <div class="placeholder-line"></div>
+                            <div style="margin-top: 2rem; padding: 2rem; background: var(--bg-secondary); border-radius: 8px; text-align: center; color: var(--text-muted);">
+                                🎬 视频预览区域
+                            </div>
+                            <div style="margin-top: 1rem; padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">
+                                <div class="placeholder-line short"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-logo">OPC CLI</div>
+        <p class="footer-tagline">为 AI Agent 设计的语音处理工具链</p>
+        <div class="footer-links">
+            <a href="#architecture">架构</a>
+            <a href="#features">功能</a>
+            <a href="#models">模型</a>
+            <a href="#pipeline">Pipeline</a>
+            <a href="docs.html">文档</a>
+        </div>
+        <p class="footer-copy">© 2025 OPC Project · Designed for AI Agents</p>
+    </footer>
+
+    <script>
+        // Terminal Animation
+        const terminalLines = [
+            { type: 'command', prompt: '$', cmd: 'opc tts "Hello World" -e qwen --speaker Vivian' },
+            { type: 'output', text: 'Generated: /tmp/opc_tts_output.mp3 (2.3s)' },
+            { type: 'command', prompt: '$', cmd: 'opc asr podcast.mp3 --format srt' },
+            { type: 'output', text: 'Stage 1: ASR + Forced Alignment ✓' },
+            { type: 'output', text: 'Stage 2: Sentence Breaking ✓' },
+            { type: 'output', text: 'Stage 3: CSV Fix (0 files) ✓' },
+            { type: 'output', text: 'Stage 4: Render → podcast.srt + podcast.ass ✓' },
+            { type: 'command', prompt: '$', cmd: 'opc cut --video vlog.mp4' },
+            { type: 'output', text: 'Server started at http://localhost:8080' },
+            { type: 'output', text: 'Opening browser...' },
+            { type: 'cursor' }
+        ];
+
+        function animateTerminal() {
+            const terminal = document.getElementById('terminal');
+            let index = 0;
+
+            function addLine() {
+                if (index >= terminalLines.length) {
+                    // Restart after delay
+                    setTimeout(() => {
+                        terminal.innerHTML = '';
+                        index = 0;
+                        addLine();
+                    }, 5000);
+                    return;
+                }
+
+                const line = terminalLines[index];
+                const delay = line.type === 'output' ? 300 : 800;
+
+                if (line.type === 'command') {
+                    terminal.innerHTML += `
+                        <div class="terminal-line" style="animation-delay: 0s">
+                            <span class="terminal-prompt">${line.prompt}</span>
+                            <span class="terminal-command">${line.cmd}</span>
+                        </div>
+                    `;
+                } else if (line.type === 'output') {
+                    terminal.innerHTML += `
+                        <div class="terminal-output" style="animation-delay: 0s">
+                            ${line.text}
+                        </div>
+                    `;
+                } else if (line.type === 'cursor') {
+                    const lastLine = terminal.lastElementChild;
+                    if (lastLine) {
+                        lastLine.innerHTML += '<span class="cursor"></span>';
+                    }
+                }
+
+                terminal.scrollTop = terminal.scrollHeight;
+                index++;
+                setTimeout(addLine, delay);
+            }
+
+            addLine();
+        }
+
+        // Pipeline Interaction
+        const pipelineSteps = document.querySelectorAll('.pipeline-step');
+        const pipelineProgress = document.getElementById('pipelineProgress');
+        const pipelineDetail = document.getElementById('pipelineDetail');
+
+        const pipelineData = {
+            1: {
+                title: 'Stage 1: ASR + 强制对齐',
+                content: `
+                    <p>使用 Qwen3-ASR-1.7B 模型进行语音识别，结合 Qwen3-ForcedAligner 进行字词级时间戳对齐。</p>
+                    <p>这是 GPU 最密集的阶段，输出包含每个字的精确开始/结束时间的 raw.json 文件。</p>
+                `,
+                code: '→ 输出: audio.raw.json (GPU 密集，可复用)'
+            },
+            2: {
+                title: 'Stage 2: 智能断句',
+                content: `
+                    <p>两遍扫描，文本优先的断句算法：</p>
+                    <p>• Pass 1: 按句号/叹号/问号强制断开，形成段落</p>
+                    <p>• Pass 2: 在每个段落内，按逗号/分号/冒号断开</p>
+                    <p>核心规则：没有标点符号绝对不断行</p>
+                `,
+                code: '→ 输出: audio.lines.json (可编辑)'
+            },
+            3: {
+                title: 'Stage 3: CSV 修正',
+                content: `
+                    <p>从 fix_dir 加载 fix_1.csv, fix_2.csv... 按序号顺序应用文本修正。</p>
+                    <p>支持批量替换、删除字幕行，适用于 ASR 错误的人工校对。</p>
+                `,
+                code: '→ 更新: audio.lines.json'
+            },
+            4: {
+                title: 'Stage 4: 渲染输出',
+                content: `
+                    <p>Pre-render validation 检查超长行等问题，通过后同时生成 SRT 和 ASS 格式。</p>
+                    <p>ASS 支持卡拉 OK 特效，可配置颜色风格。</p>
+                `,
+                code: '→ 输出: audio.srt + audio.ass'
+            }
+        };
+
+        pipelineSteps.forEach((step, index) => {
+            step.addEventListener('click', () => {
+                // Update active state
+                pipelineSteps.forEach(s => s.classList.remove('active'));
+                step.classList.add('active');
+
+                // Update progress bar
+                const progress = ((index + 1) / pipelineSteps.length) * 100;
+                pipelineProgress.style.width = progress + '%';
+
+                // Update detail content
+                const data = pipelineData[step.dataset.step];
+                pipelineDetail.innerHTML = `
+                    <h3 class="detail-title">${data.title}</h3>
+                    <div class="detail-content">${data.content}</div>
+                    <div class="detail-code">${data.code}</div>
+                `;
+            });
+        });
+
+        // Scroll Reveal Animation
+        const revealElements = document.querySelectorAll('.reveal');
+
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        });
+
+        revealElements.forEach(el => revealObserver.observe(el));
+
+        // Smooth scroll for nav links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            animateTerminal();
+            // Set initial pipeline progress
+            pipelineProgress.style.width = '25%';
+        });
+    </script>
+</body>
+</html>

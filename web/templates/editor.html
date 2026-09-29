@@ -1,0 +1,1556 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cutx - 智能口播剪辑</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #141414;
+            --bg-tertiary: #1f1f1f;
+            --bg-hover: #2a2a2a;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --text-muted: #666666;
+            --accent: #00d4ff;
+            --accent-hover: #00b8e6;
+            --danger: #ff4757;
+            --success: #2ed573;
+            --warning: #ffa502;
+            --border: #2a2a2a;
+            --selected: rgba(0, 212, 255, 0.3);
+            --deleted: rgba(255, 71, 87, 0.3);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            font-size: 14px;
+        }
+
+        /* Header */
+        .header {
+            height: 52px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .logo i {
+            color: var(--accent);
+            font-size: 20px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: flex;
+            height: calc(100vh - 52px);
+        }
+
+        /* Left Panel - Text Editor */
+        .left-panel {
+            width: 50%;
+            min-width: 400px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-tertiary);
+        }
+
+        .panel-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .panel-stats {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Upload Area */
+        .upload-area {
+            padding: 60px 40px;
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            margin: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .upload-area:hover {
+            border-color: var(--accent);
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        .upload-area i {
+            font-size: 48px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .upload-area p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* Text Editor */
+        .editor-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            user-select: text;
+        }
+
+        .editor-toolbar {
+            display: flex;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border);
+            align-items: center;
+        }
+
+        .toolbar-divider {
+            width: 1px;
+            height: 20px;
+            background: var(--border);
+            margin: 0 4px;
+        }
+
+        .editor-btn {
+            padding: 6px 12px;
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.15s;
+        }
+
+        .editor-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .editor-btn.danger:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        .editor-btn.active {
+            background: var(--accent);
+            color: #000;
+        }
+
+        .config-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 8px;
+        }
+
+        .config-item label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .config-item input {
+            padding: 4px 8px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-size: 12px;
+        }
+
+        .config-item input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        /* Word styling */
+        .text-content {
+            line-height: 2.2;
+            font-size: 16px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .word {
+            display: inline;
+            padding: 2px 1px;
+            margin: 0 1px;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.1s;
+            position: relative;
+        }
+
+        .word:hover {
+            background: var(--bg-hover);
+        }
+
+        .word.selected {
+            background: var(--selected) !important;
+            box-shadow: 0 0 0 1px var(--accent);
+        }
+
+        .word.deleted {
+            background: var(--deleted);
+            text-decoration: line-through;
+            opacity: 0.5;
+        }
+
+        .word.current {
+            background: rgba(0, 212, 255, 0.15);
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .word .time-hint {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            z-index: 100;
+            border: 1px solid var(--border);
+        }
+
+        .word:hover .time-hint {
+            opacity: 1;
+        }
+
+        .punctuation {
+            color: var(--text-muted);
+        }
+
+        /* Silence Gap */
+        .gap {
+            display: inline-flex;
+            align-items: center;
+            vertical-align: middle;
+            margin: 0 4px;
+            padding: 2px 6px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.15s;
+            border: 1px dashed var(--border);
+        }
+
+        .gap:hover {
+            background: var(--bg-hover);
+            border-color: var(--accent);
+        }
+
+        .gap.selected {
+            background: var(--selected);
+            border-color: var(--accent);
+            border-style: solid;
+        }
+
+        .gap.deleted {
+            opacity: 0.3;
+            background: var(--danger);
+            border-color: var(--danger);
+        }
+
+        .gap-line {
+            width: 20px;
+            height: 2px;
+            background: var(--text-muted);
+            margin-right: 4px;
+        }
+
+        .gap.selected .gap-line {
+            background: var(--accent);
+        }
+
+        .gap.deleted .gap-line {
+            background: var(--danger);
+        }
+
+        .gap-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .gap:hover .gap-label {
+            color: var(--accent);
+        }
+
+        /* Right Panel - Video Preview */
+        .right-panel {
+            flex: 1;
+            background: var(--bg-primary);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .video-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: #000;
+            position: relative;
+        }
+
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 720px;
+            aspect-ratio: 16/9;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .video-placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+        }
+
+        .video-placeholder i {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        /* Bottom Timeline */
+        .timeline-container {
+            height: 100px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 16px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .zoom-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .zoom-control label {
+            color: var(--text-secondary);
+        }
+
+        .zoom-control input[type="range"] {
+            width: 100px;
+            cursor: pointer;
+        }
+
+        .zoom-control #zoomLevel {
+            color: var(--accent);
+            font-weight: 500;
+            min-width: 30px;
+            text-align: right;
+        }
+
+        .timeline-track-wrapper {
+            flex: 1;
+            padding: 0 16px 12px;
+            position: relative;
+        }
+
+        .timeline-track {
+            height: 100%;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        #waveformCanvas {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .timeline-word {
+            position: absolute;
+            top: 4px;
+            height: 20px;
+            background: var(--accent);
+            border-radius: 2px;
+            min-width: 2px;
+            cursor: pointer;
+            transition: all 0.15s;
+            z-index: 10;
+        }
+
+        .timeline-word:hover {
+            background: var(--accent-hover);
+        }
+
+        .timeline-word.deleted {
+            background: var(--danger);
+        }
+
+        .timeline-gap {
+            position: absolute;
+            top: 4px;
+            height: 20px;
+            background: var(--warning);
+            opacity: 0.6;
+            cursor: pointer;
+            z-index: 10;
+            border-radius: 2px;
+        }
+
+        .timeline-gap:hover {
+            opacity: 0.9;
+            background: var(--accent);
+        }
+
+        .timeline-gap.deleted {
+            opacity: 0.2;
+            background: var(--danger);
+        }
+
+        .timeline-cursor {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: white;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Progress Modal */
+        .progress-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .progress-container.active {
+            display: flex;
+        }
+
+        .progress-box {
+            background: var(--bg-secondary);
+            padding: 32px 48px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .progress-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Status Bar */
+        .status-bar {
+            height: 28px;
+            background: var(--bg-tertiary);
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .status-left, .status-right {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #444;
+        }
+
+        /* Selection style */
+        ::selection {
+            background: var(--accent);
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">
+            <i class="fas fa-scissors"></i>
+            <span>Cutx</span>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-secondary" id="btnUndo" disabled>
+                <i class="fas fa-undo"></i>
+                撤销
+            </button>
+            <button class="btn btn-secondary" id="btnRedo" disabled>
+                <i class="fas fa-redo"></i>
+                重做
+            </button>
+            <div style="width: 1px; height: 24px; background: var(--border); margin: 0 4px;"></div>
+            <button class="btn btn-primary" id="btnExport">
+                <i class="fas fa-download"></i>
+                导出视频
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Left Panel - Text Editor -->
+        <div class="left-panel">
+            <div class="panel-header">
+                <span class="panel-title">字幕编辑</span>
+                <span class="panel-stats" id="editorStats">0 字</span>
+            </div>
+
+            <!-- Upload Area -->
+            <div class="upload-area" id="uploadArea">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p>拖拽视频文件到此处，或点击上传</p>
+                <p style="font-size: 12px; margin-top: 8px; opacity: 0.6;">支持 MP4, MOV, MP3, WAV 格式</p>
+            </div>
+
+            <!-- Editor Toolbar -->
+            <div class="editor-toolbar" id="editorToolbar" style="display: none;">
+                <button class="editor-btn danger" id="btnDeleteSelected" title="删除选中 (Delete/Backspace)">
+                    <i class="fas fa-trash"></i>
+                    删除
+                </button>
+                <button class="editor-btn" id="btnRestoreSelected" title="恢复选中">
+                    <i class="fas fa-undo"></i>
+                    恢复
+                </button>
+                <div class="toolbar-divider"></div>
+                <button class="editor-btn danger" id="btnClearDeleted">
+                    <i class="fas fa-broom"></i>
+                    清除已删除
+                </button>
+                <div class="toolbar-divider"></div>
+                <div class="config-item">
+                    <label for="gapThreshold">间隙阈值 (秒):</label>
+                    <input type="number" id="gapThreshold" value="0.5" step="0.1" min="0.1" max="5" style="width: 60px;">
+                </div>
+                <div class="toolbar-divider"></div>
+                <div class="config-item">
+                    <label for="energyThreshold">能量阈值:</label>
+                    <input type="number" id="energyThreshold" value="0.7" step="0.1" min="0.1" max="1.0" style="width: 60px;">
+                </div>
+                <div class="config-item">
+                    <label for="searchMs">搜索范围 (ms):</label>
+                    <input type="number" id="searchMs" value="100" step="10" min="10" max="500" style="width: 60px;">
+                </div>
+            </div>
+
+            <!-- Text Content -->
+            <div class="editor-container" id="editorContainer" style="display: none;">
+                <div class="text-content" id="textContent"></div>
+            </div>
+        </div>
+
+        <!-- Right Panel - Video Preview -->
+        <div class="right-panel">
+            <div class="video-container">
+                <div class="video-wrapper">
+                    <video id="videoPlayer" controls style="display: none;"></video>
+                    <div class="video-placeholder" id="videoPlaceholder">
+                        <i class="fas fa-film"></i>
+                        <p>上传视频开始剪辑</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timeline -->
+            <div class="timeline-container">
+                <div class="timeline-header">
+                    <span>时间轴</span>
+                    <div class="zoom-control">
+                        <label for="timelineZoom">缩放:</label>
+                        <input type="range" id="timelineZoom" min="1" max="10" value="1" step="0.5">
+                        <span id="zoomLevel">1x</span>
+                    </div>
+                    <span id="timeDisplay">00:00 / 00:00</span>
+                </div>
+                <div class="timeline-track-wrapper">
+                    <div class="timeline-track" id="timelineTrack">
+                        <canvas id="waveformCanvas"></canvas>
+                        <div class="timeline-cursor" id="timelineCursor" style="left: 0%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Bar -->
+            <div class="status-bar">
+                <div class="status-left">
+                    <div class="status-item">
+                        <i class="fas fa-mouse-pointer" style="font-size: 10px;"></i>
+                        <span>拖拽选择文字</span>
+                    </div>
+                    <div class="status-item">
+                        <i class="fas fa-keyboard" style="font-size: 10px;"></i>
+                        <span>Delete 删除选中</span>
+                    </div>
+                </div>
+                <div class="status-right">
+                    <div class="status-item" id="statusWords">
+                        <span>总字数: 0</span>
+                    </div>
+                    <div class="status-item" id="statusDeleted">
+                        <span>已删除: 0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Modal -->
+    <div class="progress-container" id="progressModal">
+        <div class="progress-box">
+            <div class="progress-spinner"></div>
+            <p id="progressText">正在处理...</p>
+        </div>
+    </div>
+
+    <script>
+        // Global State
+        let currentFile = null;
+        let words = [];  // Array of word objects
+        let gaps = [];   // Array of silence gaps between words
+        let deletedWords = new Set();  // Set of deleted word indices
+        let deletedGaps = new Set();   // Set of deleted gap indices (to cut silence)
+        let selectedWords = new Set();  // Set of selected word indices
+        let selectedGaps = new Set();   // Set of selected gap indices
+        let currentWordIndex = -1;
+        let currentTime = 0;
+        let duration = 0;
+        let isDragging = false;
+        let dragStartIndex = -1;
+        let isGapDrag = false;
+
+        // Configuration - GAP_THRESHOLD is loaded from input
+        let GAP_THRESHOLD = 0.5;  // Minimum gap duration to show (seconds)
+        const GAP_MERGE_THRESHOLD = 0.1;  // Merge gaps if words are very close
+
+        // DOM Elements
+        const uploadArea = document.getElementById('uploadArea');
+        const editorToolbar = document.getElementById('editorToolbar');
+        const editorContainer = document.getElementById('editorContainer');
+        const textContent = document.getElementById('textContent');
+        const videoPlayer = document.getElementById('videoPlayer');
+        const videoPlaceholder = document.getElementById('videoPlaceholder');
+        const timelineTrack = document.getElementById('timelineTrack');
+        const timelineCursor = document.getElementById('timelineCursor');
+        const progressModal = document.getElementById('progressModal');
+        const gapThresholdInput = document.getElementById('gapThreshold');
+        const timelineZoomInput = document.getElementById('timelineZoom');
+        const zoomLevelSpan = document.getElementById('zoomLevel');
+        const waveformCanvas = document.getElementById('waveformCanvas');
+        const progressText = document.getElementById('progressText');
+
+        // Timeline zoom level
+        let timelineZoom = 1;
+
+        // Auto-load on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAutoFile();
+        });
+
+        async function checkAutoFile() {
+            try {
+                const response = await fetch('/api/auto-file');
+                const data = await response.json();
+
+                if (data.auto_mode && data.file_id) {
+                    showProgress('正在加载视频和字幕...');
+
+                    currentFile = {
+                        file_id: data.file_id,
+                        filename: data.filename,
+                        asr_result: data.asr_result
+                    };
+
+                    loadWords(data.asr_result);
+                    loadVideo(data.file_id);
+
+                    uploadArea.style.display = 'none';
+                    editorToolbar.style.display = 'flex';
+                    editorContainer.style.display = 'block';
+
+                    hideProgress();
+                }
+            } catch (error) {
+                console.log('No auto-file configured, waiting for manual upload');
+            }
+        }
+
+        // Upload Handling
+        uploadArea.addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'video/*,audio/*';
+            input.onchange = handleFileSelect;
+            input.click();
+        });
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        async function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) await handleFile(file);
+        }
+
+        async function handleFile(file) {
+            showProgress('正在上传并识别字幕...');
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('language', 'Chinese');
+
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    currentFile = data;
+                    loadWords(data.asr_result);
+                    loadVideo(data.file_id);
+
+                    uploadArea.style.display = 'none';
+                    editorToolbar.style.display = 'flex';
+                    editorContainer.style.display = 'block';
+                } else {
+                    alert('处理失败: ' + data.error);
+                }
+            } catch (error) {
+                alert('上传失败: ' + error.message);
+            } finally {
+                hideProgress();
+            }
+        }
+
+        function loadWords(asrResult) {
+            words = asrResult.segments[0]?.words || [];
+            gaps = detectSilenceGaps(words);
+            deletedWords.clear();
+            deletedGaps.clear();
+            selectedWords.clear();
+            selectedGaps.clear();
+            renderWords();
+            renderTimeline();
+            updateStats();
+        }
+
+        // Detect silence gaps between words
+        function detectSilenceGaps(wordList) {
+            const detectedGaps = [];
+
+            for (let i = 0; i < wordList.length - 1; i++) {
+                const currentEnd = wordList[i].end_time;
+                const nextStart = wordList[i + 1].start_time;
+                const gapDuration = nextStart - currentEnd;
+
+                if (gapDuration >= GAP_THRESHOLD) {
+                    detectedGaps.push({
+                        index: i,  // Gap is after word[i]
+                        start: currentEnd,
+                        end: nextStart,
+                        duration: gapDuration,
+                        afterWord: i,
+                        beforeWord: i + 1
+                    });
+                }
+            }
+
+            return detectedGaps;
+        }
+
+        function renderWords() {
+            // Build HTML with words and gaps
+            let html = '';
+
+            for (let i = 0; i < words.length; i++) {
+                const word = words[i];
+                const isDeleted = deletedWords.has(i);
+                const isSelected = selectedWords.has(i);
+
+                // Render word
+                html += `<span
+                    class="word ${isDeleted ? 'deleted' : ''} ${isSelected ? 'selected' : ''}"
+                    data-index="${i}"
+                    data-start="${word.start_time}"
+                    data-end="${word.end_time}"
+                >${escapeHtml(word.text)}<span class="time-hint">${formatTime(word.start_time)}</span></span>`;
+
+                // Check if there's a gap after this word
+                const gap = gaps.find(g => g.afterWord === i);
+                if (gap) {
+                    const isGapDeleted = deletedGaps.has(gap.index);
+                    const isGapSelected = selectedGaps.has(gap.index);
+                    const gapClass = isGapDeleted ? 'deleted' : (isGapSelected ? 'selected' : '');
+
+                    html += `<span class="gap ${gapClass}" data-gap-index="${gap.index}" title="间隙 ${formatTime(gap.duration)}">
+                        <span class="gap-line"></span>
+                        <span class="gap-label">${gap.duration.toFixed(1)}s</span>
+                    </span>`;
+                }
+            }
+
+            textContent.innerHTML = html;
+
+            // Add event listeners to words
+            document.querySelectorAll('.word').forEach(wordEl => {
+                const index = parseInt(wordEl.dataset.index);
+
+                wordEl.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    isDragging = true;
+                    isGapDrag = false;
+                    dragStartIndex = index;
+
+                    if (!e.shiftKey && !e.metaKey && !e.ctrlKey) {
+                        selectedWords.clear();
+                        selectedGaps.clear();
+                    }
+
+                    selectedWords.add(index);
+                    updateSelection();
+                });
+
+                wordEl.addEventListener('mouseenter', () => {
+                    console.log(`[mouseenter] isDragging=${isDragging}, isGapDrag=${isGapDrag}, dragStartIndex=${dragStartIndex}, currentIndex=${index}`);
+                    if (isDragging && !isGapDrag) {
+                        console.log('[mouseenter] calling selectRange');
+                        selectRange(dragStartIndex, index);
+                    }
+                });
+
+                wordEl.addEventListener('click', () => {
+                    if (!isDragging) {
+                        seekTo(parseFloat(wordEl.dataset.start));
+                    }
+                });
+
+                wordEl.addEventListener('dblclick', () => {
+                    toggleDeleteWord(index);
+                });
+            });
+
+            // Add event listeners to gaps
+            document.querySelectorAll('.gap').forEach(gapEl => {
+                const gapIndex = parseInt(gapEl.dataset.gapIndex);
+                const gap = gaps.find(g => g.index === gapIndex);
+
+                gapEl.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    isDragging = false;
+                    isGapDrag = true;
+
+                    if (!e.shiftKey && !e.metaKey && !e.ctrlKey) {
+                        selectedWords.clear();
+                        selectedGaps.clear();
+                    }
+
+                    selectedGaps.add(gapIndex);
+                    updateSelection();
+                });
+
+                gapEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (gap) {
+                        seekTo(gap.start);
+                    }
+                });
+
+                gapEl.addEventListener('dblclick', (e) => {
+                    e.stopPropagation();
+                    toggleDeleteGap(gapIndex);
+                });
+            });
+        }
+
+        function selectRange(start, end) {
+            const min = Math.min(start, end);
+            const max = Math.max(start, end);
+
+            // Get gap threshold from config
+            const gapThreshold = parseFloat(document.getElementById('gapThreshold').value) || 0.5;
+
+            console.log(`[selectRange] start=${start}, end=${end}, gapThreshold=${gapThreshold}`);
+
+            // Expand to left: include words connected by gaps < threshold
+            let expandLeft = min;
+            while (expandLeft > 0) {
+                // Calculate gap before expandLeft directly from words
+                const gapDuration = words[expandLeft].start_time - words[expandLeft - 1].end_time;
+                console.log(`[selectRange] left expand: word[${expandLeft-1}] '${words[expandLeft-1].text}' -> word[${expandLeft}] '${words[expandLeft].text}' gap=${(gapDuration*1000).toFixed(1)}ms`);
+                if (gapDuration < gapThreshold) {
+                    expandLeft--;
+                } else {
+                    console.log(`[selectRange] left stop at ${expandLeft}, gap=${(gapDuration*1000).toFixed(1)}ms >= threshold`);
+                    break;
+                }
+            }
+
+            // Expand to right: include words connected by gaps < threshold
+            let expandRight = max;
+            while (expandRight < words.length - 1) {
+                // Calculate gap after expandRight directly from words
+                const gapDuration = words[expandRight + 1].start_time - words[expandRight].end_time;
+                console.log(`[selectRange] right expand: word[${expandRight}] '${words[expandRight].text}' -> word[${expandRight+1}] '${words[expandRight+1].text}' gap=${(gapDuration*1000).toFixed(1)}ms`);
+                if (gapDuration < gapThreshold) {
+                    expandRight++;
+                } else {
+                    console.log(`[selectRange] right stop at ${expandRight}, gap=${(gapDuration*1000).toFixed(1)}ms >= threshold`);
+                    break;
+                }
+            }
+
+            console.log(`[selectRange] final range: [${expandLeft}] '${words[expandLeft].text}' to [${expandRight}] '${words[expandRight].text}'`);
+
+            // Add expanded range to selectedWords
+            for (let i = expandLeft; i <= expandRight; i++) {
+                selectedWords.add(i);
+            }
+
+            updateSelection();
+        }
+
+        function updateSelection() {
+            document.querySelectorAll('.word').forEach((el, index) => {
+                el.classList.toggle('selected', selectedWords.has(index));
+            });
+            document.querySelectorAll('.gap').forEach((el) => {
+                const gapIndex = parseInt(el.dataset.gapIndex);
+                el.classList.toggle('selected', selectedGaps.has(gapIndex));
+            });
+            updateStats();
+        }
+
+        function toggleDeleteWord(index) {
+            if (deletedWords.has(index)) {
+                deletedWords.delete(index);
+            } else {
+                deletedWords.add(index);
+            }
+            renderWords();
+            renderTimeline();
+            updateStats();
+        }
+
+        function toggleDeleteGap(gapIndex) {
+            if (deletedGaps.has(gapIndex)) {
+                deletedGaps.delete(gapIndex);
+            } else {
+                deletedGaps.add(gapIndex);
+            }
+            renderWords();
+            renderTimeline();
+            updateStats();
+        }
+
+        function deleteSelected() {
+            selectedWords.forEach(index => {
+                deletedWords.add(index);
+            });
+            selectedGaps.forEach(gapIndex => {
+                deletedGaps.add(gapIndex);
+            });
+            selectedWords.clear();
+            selectedGaps.clear();
+            // Recalculate gaps after word deletion
+            gaps = detectSilenceGaps(words);
+            // Clear deletedGaps that no longer exist
+            const validGapIndices = new Set(gaps.map(g => g.index));
+            deletedGaps = new Set([...deletedGaps].filter(i => validGapIndices.has(i)));
+            renderWords();
+            renderTimeline();
+            updateStats();
+        }
+
+        function restoreSelected() {
+            selectedWords.forEach(index => {
+                deletedWords.delete(index);
+            });
+            selectedGaps.forEach(gapIndex => {
+                deletedGaps.delete(gapIndex);
+            });
+            selectedWords.clear();
+            selectedGaps.clear();
+            // Recalculate gaps after word restoration
+            gaps = detectSilenceGaps(words);
+            renderWords();
+            renderTimeline();
+            updateStats();
+        }
+
+        function renderTimeline() {
+            if (!duration || words.length === 0) return;
+
+            // Keep cursor, remove old segments
+            timelineTrack.innerHTML = '<div class="timeline-cursor" id="timelineCursor"></div>';
+
+            // Calculate visible time range based on zoom
+            const visibleDuration = duration / timelineZoom;
+            const centerTime = currentTime + visibleDuration / 2;
+
+            // Render gaps on timeline
+            gaps.forEach((gap) => {
+                const gapEl = document.createElement('div');
+                gapEl.className = `timeline-gap ${deletedGaps.has(gap.index) ? 'deleted' : ''}`;
+                gapEl.style.left = `${(gap.start / duration) * 100}%`;
+                gapEl.style.width = `${Math.max(0.3, ((gap.end - gap.start) / duration) * 100)}%`;
+                gapEl.title = `间隙 ${formatTime(gap.duration)}`;
+                gapEl.onclick = () => seekTo(gap.start);
+                timelineTrack.appendChild(gapEl);
+            });
+
+            // Render words
+            words.forEach((word, index) => {
+                const segment = document.createElement('div');
+                segment.className = `timeline-word ${deletedWords.has(index) ? 'deleted' : ''}`;
+                segment.style.left = `${(word.start_time / duration) * 100}%`;
+                segment.style.width = `${Math.max(0.5, ((word.end_time - word.start_time) / duration) * 100)}%`;
+                segment.title = word.text;
+                segment.onclick = () => seekTo(word.start_time);
+                timelineTrack.appendChild(segment);
+            });
+        }
+
+        function loadVideo(fileId) {
+            videoPlayer.src = `/api/video/${fileId}`;
+            videoPlayer.style.display = 'block';
+            videoPlaceholder.style.display = 'none';
+
+            videoPlayer.onloadedmetadata = () => {
+                duration = videoPlayer.duration;
+                updateTimeDisplay();
+                renderWaveform();
+            };
+
+            videoPlayer.ontimeupdate = () => {
+                currentTime = videoPlayer.currentTime;
+                updateTimelineCursor();
+                updateTimeDisplay();
+                highlightCurrentWord();
+                skipDeletedSegments();
+            };
+        }
+
+        // Render waveform from video audio
+        function renderWaveform() {
+            const canvas = waveformCanvas;
+            const ctx = canvas.getContext('2d');
+            const width = canvas.offsetWidth;
+            const height = canvas.offsetHeight;
+
+            // Set canvas resolution
+            canvas.width = width * 2;
+            canvas.height = height * 2;
+            ctx.scale(2, 2);
+
+            // Clear canvas
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bg-tertiary').trim();
+            ctx.fillRect(0, 0, width, height);
+
+            // Draw center line
+            ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--border').trim();
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, height / 2);
+            ctx.lineTo(width, height / 2);
+            ctx.stroke();
+
+            // Create gradient for waveform
+            const gradient = ctx.createLinearGradient(0, 0, 0, height);
+            gradient.addColorStop(0, getComputedStyle(document.documentElement).getPropertyValue('--accent').trim());
+            gradient.addColorStop(1, getComputedStyle(document.documentElement).getPropertyValue('--accent-hover').trim());
+            ctx.fillStyle = gradient;
+
+            // Draw simulated waveform (will be replaced with real audio data)
+            const barWidth = 2;
+            const bars = Math.floor(width / barWidth);
+
+            for (let i = 0; i < bars; i++) {
+                const t = (i / bars) * duration;
+                // Simulate amplitude based on word density
+                let amplitude = 0.2 + Math.random() * 0.3;
+
+                // Find if there's a word at this time
+                const word = words.find(w => Math.abs((w.start_time + w.end_time) / 2 - t) < 0.5);
+                if (word && !deletedWords.has(words.indexOf(word))) {
+                    amplitude = 0.6 + Math.random() * 0.3;
+                }
+
+                const barHeight = amplitude * height * 0.4;
+                ctx.fillRect(
+                    i * barWidth,
+                    (height - barHeight) / 2,
+                    barWidth - 1,
+                    barHeight
+                );
+            }
+        }
+
+        function seekTo(time) {
+            if (videoPlayer) {
+                videoPlayer.currentTime = time;
+                videoPlayer.play();
+            }
+        }
+
+        function updateTimelineCursor() {
+            if (duration) {
+                const percent = (currentTime / duration) * 100;
+                timelineCursor.style.left = `${percent}%`;
+            }
+        }
+
+        function updateTimeDisplay() {
+            document.getElementById('timeDisplay').textContent =
+                `${formatTime(currentTime)} / ${formatTime(duration)}`;
+        }
+
+        function highlightCurrentWord() {
+            // Find current word
+            const newIndex = words.findIndex(w =>
+                currentTime >= w.start_time && currentTime <= w.end_time
+            );
+
+            if (newIndex !== currentWordIndex) {
+                // Remove old highlight
+                const oldEl = document.querySelector(`.word[data-index="${currentWordIndex}"]`);
+                if (oldEl) oldEl.classList.remove('current');
+
+                // Add new highlight
+                const newEl = document.querySelector(`.word[data-index="${newIndex}"]`);
+                if (newEl) {
+                    newEl.classList.add('current');
+                    newEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+
+                currentWordIndex = newIndex;
+            }
+        }
+
+        // Track the last segment we auto-skipped to avoid infinite loops
+        let lastSkipTarget = -1;
+        let lastSkipTime = 0;
+
+        function skipDeletedSegments() {
+            if (!videoPlayer || videoPlayer.paused) return;
+
+            // Check if we're in a deleted gap
+            const currentGap = gaps.find(g =>
+                currentTime >= g.start && currentTime <= g.end
+            );
+            if (currentGap && deletedGaps.has(currentGap.index)) {
+                // Skip to the word after this gap
+                const nextWordIdx = currentGap.beforeWord;
+                if (nextWordIdx < words.length) {
+                    const targetTime = words[nextWordIdx].start_time;
+                    videoPlayer.currentTime = targetTime;
+                }
+                return;
+            }
+
+            // Find which word we're currently in
+            const currentWordIdx = words.findIndex(w =>
+                currentTime >= w.start_time && currentTime <= w.end_time
+            );
+
+            // If we're in a deleted word, skip to the next kept word
+            if (currentWordIdx !== -1 && deletedWords.has(currentWordIdx)) {
+                skipToNextKeptWord(currentWordIdx);
+            }
+        }
+
+        function skipToNextKeptWord(fromIndex) {
+            // Find the next kept word after fromIndex
+            let nextKeptIndex = -1;
+            for (let i = fromIndex + 1; i < words.length; i++) {
+                if (!deletedWords.has(i)) {
+                    nextKeptIndex = i;
+                    break;
+                }
+            }
+
+            if (nextKeptIndex !== -1) {
+                const targetTime = words[nextKeptIndex].start_time;
+                videoPlayer.currentTime = targetTime;
+            } else {
+                // No more kept words, pause the video
+                videoPlayer.pause();
+            }
+        }
+
+        function updateStats() {
+            const total = words.length;
+            const deleted = deletedWords.size;
+            const selected = selectedWords.size + selectedGaps.size;
+            const kept = total - deleted;
+
+            // Calculate total silence gap duration
+            const totalGapDuration = gaps.reduce((sum, g) => sum + g.duration, 0);
+            const deletedGapDuration = gaps
+                .filter(g => deletedGaps.has(g.index))
+                .reduce((sum, g) => sum + g.duration, 0);
+
+            document.getElementById('editorStats').textContent = `${kept}/${total} 字`;
+            document.getElementById('statusWords').innerHTML = `<span>总字数: ${total}</span>`;
+            document.getElementById('statusDeleted').innerHTML = `<span>已删: ${deleted}字 + ${formatTime(deletedGapDuration)}静音</span>`;
+
+            // Update button states
+            document.getElementById('btnDeleteSelected').disabled = selected === 0;
+            document.getElementById('btnRestoreSelected').disabled = selected === 0;
+            // Export button: disabled if no kept words available
+            const hasKeptWords = kept > 0;
+            document.getElementById('btnExport').disabled = !hasKeptWords;
+            document.getElementById('btnExport').style.opacity = hasKeptWords ? '1' : '0.5';
+            document.getElementById('btnExport').style.cursor = hasKeptWords ? 'pointer' : 'not-allowed';
+        }
+
+        // Global mouse events for drag selection
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            isGapDrag = false;
+            dragStartIndex = -1;
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                if (selectedWords.size > 0 || selectedGaps.size > 0) {
+                    e.preventDefault();
+                    deleteSelected();
+                }
+            } else if (e.key === 'Escape') {
+                selectedWords.clear();
+                selectedGaps.clear();
+                updateSelection();
+            }
+        });
+
+        // Toolbar buttons
+        document.getElementById('btnDeleteSelected').addEventListener('click', deleteSelected);
+        document.getElementById('btnRestoreSelected').addEventListener('click', restoreSelected);
+
+        document.getElementById('btnClearDeleted').addEventListener('click', () => {
+            if (confirm('确定要清除所有已删除的字和间隙吗？此操作不可撤销。')) {
+                // Filter out deleted words
+                words = words.filter((_, i) => !deletedWords.has(i));
+                // Recalculate gaps after filtering
+                gaps = detectSilenceGaps(words);
+                deletedWords.clear();
+                deletedGaps.clear();
+                selectedWords.clear();
+                selectedGaps.clear();
+                renderWords();
+                renderTimeline();
+                updateStats();
+            }
+        });
+
+        // Gap threshold configuration
+        gapThresholdInput.addEventListener('change', (e) => {
+            GAP_THRESHOLD = parseFloat(e.target.value) || 0.5;
+            // Reload words and recalculate gaps with new threshold
+            if (currentFile) {
+                loadWordsFromServer(currentFile);
+            }
+        });
+
+        // Timeline zoom control
+        timelineZoomInput.addEventListener('input', (e) => {
+            timelineZoom = parseFloat(e.target.value);
+            zoomLevelSpan.textContent = timelineZoom.toFixed(1) + 'x';
+            renderTimeline();
+        });
+
+        document.getElementById('btnExport').addEventListener('click', async () => {
+            if (!currentFile) {
+                alert('请先上传视频');
+                return;
+            }
+
+            // Get selected words or kept words (if no selection, use all kept words)
+            let wordsToExport = words
+                .map((w, i) => ({ ...w, index: i }))
+                .filter(w => !deletedWords.has(w.index));
+
+            // If there are selected words, export only those
+            if (selectedWords.size > 0) {
+                wordsToExport = wordsToExport.filter(w => selectedWords.has(w.index));
+            }
+
+            if (wordsToExport.length === 0) {
+                alert('请至少选择一个字');
+                return;
+            }
+
+            // Build time ranges from selected words
+            // Words connected by gaps < threshold will be grouped together
+            const gapThreshold = parseFloat(document.getElementById('gapThreshold').value) || 0.5;
+
+            const cuts = [];
+            if (wordsToExport.length > 0) {
+                let currentSegment = { start: wordsToExport[0].start_time, end: wordsToExport[0].end_time };
+
+                for (let i = 1; i < wordsToExport.length; i++) {
+                    const word = wordsToExport[i];
+                    const prevWord = wordsToExport[i - 1];
+
+                    // Check if there's a gap between these words
+                    const gapBetween = gaps.find(g =>
+                        g.afterWord === prevWord.index && g.beforeWord === word.index
+                    );
+
+                    // If gap is smaller than threshold, merge into current segment
+                    if (gapBetween && gapBetween.duration < gapThreshold) {
+                        currentSegment.end = word.end_time;
+                    } else {
+                        cuts.push({ ...currentSegment });
+                        currentSegment = { start: word.start_time, end: word.end_time };
+                    }
+                }
+                cuts.push(currentSegment);
+            }
+
+            // Get valley correction parameters
+            const energyThreshold = parseFloat(document.getElementById('energyThreshold').value) || 0.7;
+            const searchMs = parseInt(document.getElementById('searchMs').value) || 100;
+
+            showProgress('正在导出视频...');
+
+            try {
+                const response = await fetch('/api/export', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        file_id: currentFile.file_id,
+                        cuts: cuts,
+                        format: 'mp4',
+                        apply_valley_correction: true,
+                        energy_threshold: energyThreshold,
+                        search_ms: searchMs
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    window.open(data.download_url, '_blank');
+                } else {
+                    alert('导出失败：' + data.error);
+                }
+            } catch (error) {
+                alert('导出失败：' + error.message);
+            } finally {
+                hideProgress();
+            }
+        });
+
+        // Helper functions
+        function formatTime(seconds) {
+            if (!seconds) return '00:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showProgress(text) {
+            progressText.textContent = text;
+            progressModal.classList.add('active');
+        }
+
+        function hideProgress() {
+            progressModal.classList.remove('active');
+        }
+    </script>
+</body>
+</html>
